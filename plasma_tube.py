@@ -5,6 +5,7 @@ from pyprocessing import PVector, color
 from math import sqrt, pow, sin, cos, acos, tan, atan, pi, e, log, exp
 from random import random, uniform
 import numpy as np
+from pprint import pprint, pformat
 
 screen_size = (320, 200)
 back_col = color(0, 0, 0)
@@ -97,7 +98,7 @@ class Positionable(object):
 
 
 class Drawable(Positionable):
-    """ Mixin for drawable obkects """
+    """ Mixin for drawable objects """
     def __init__(self, **kwargs):
         Positionable.__init__(self, **kwargs)
         self.fill_color = kwargs.get('fill_color', default_fill_col)
@@ -114,9 +115,16 @@ class Drawable(Positionable):
         self.draw_poly()
         pyp.popMatrix()
 
-class Particle(Drawable):
+class Dynamic(object):
+    """ mixin for particles that have velocities"""
+    def __init__(self, **kwargs):
+        self.velocity = kwargs.get('velocity', PVector(0,0,0))
+        self.mass = kwargs.get('mass', 1)
+
+class Particle(Drawable, Dynamic):
     def __init__(self, **kwargs):
         Drawable.__init__(self, **kwargs)
+        Dynamic.__init__(self, **kwargs)
         self.iteration = 0
 
     def draw_poly(self):
@@ -126,10 +134,34 @@ class Particle(Drawable):
         if self.active:
             Drawable.draw(self)
 
-class Swarm(Drawable):
-    """ Collection of particles that obey the same rules """
-    pass
+    def step(self, field=None):
+        if field:
+            self.velocity = PVector(
+                *[sum([v_i,f_i]) for (v_i, f_i) in zip(self.velocity, field)]
+            )
+        if self.velocity:
+            self.position = PVector(
+                *[sum([p_i, v_i]) for (p_i, v_i) in zip(self.position, self.velocity)]
+            )
 
+class Swarm(list, Drawable):
+    """ Collection of particles that obey the same rules """
+    def __init__(self, **kwargs):
+        self.capacity = kwargs.pop('capacity', 100)
+        self.spawn_velocity = kwargs.pop('spawn_velocity', PVector(-1,0,0))
+        Drawable.__init__(self, **kwargs)
+        list.__init__(self, **kwargs)
+
+
+
+    def spawn(self, **kwargs):
+        # position = kwargs.pop('position')
+        kwargs['velocity'] = self.spawn_velocity
+        if len(self) > self.capacity:
+            self.pop(0)
+        self.append(Particle(
+            **kwargs
+        ))
 
 class Spawner(Drawable):
     def __init__(self, **kwargs):
@@ -164,14 +196,13 @@ class Spawner(Drawable):
             circle = Transformation.transpose(self.position, circle)
         return circle
 
-
-
 def setup():
     global screen_size
     global camera_pos
     global background_particles
     global spawner
     global frame_count
+    global swarm
 
     frame_count = 0
 
@@ -179,8 +210,12 @@ def setup():
 
     spawner = Spawner(
         position=PVector(0,0,max(screen_size)/10),
-        orientation=PVector(0,0,max(screen_size)/10)
+        orientation=PVector(0,0,max(screen_size)/10),
+        velocity=PVector(1,0,0),
+        capacity=1
     )
+
+    swarm = Swarm()
 
     #init background_particles
     # background_particles = []
@@ -198,7 +233,9 @@ def draw():
     global background_particles
     global spawner
     global frame_count
+    global swarm
 
+    print "draw cycle"
 
     pyp.camera(
         camera_pos.x, camera_pos.y, camera_pos.z,
@@ -216,9 +253,27 @@ def draw():
 
     #calculate spawner angle
     spawner.angle = 2.0 * pi * (frame_count % frame_cycles) / frame_cycles
-    print "angle: ", spawner.angle, "position:", spawner.spawn_position
+    print 'spawner', pformat({
+        'angle':spawner.angle,
+        'position':spawner.spawn_position
+    })
 
     spawner.draw()
+
+    swarm.spawn(
+        orientation=PVector(100,0,0),
+        position=spawner.spawn_position
+    )
+
+    for particle in swarm:
+        print 'particle', pformat({
+            'position': particle.position,
+            'velocity': particle.velocity,
+            'orientation': particle.orientation
+        })
+        particle.draw()
+        particle.step()
+
 
     frame_count += 1
 
