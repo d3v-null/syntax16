@@ -18,6 +18,7 @@ background_particle_count = 500
 frame_cycles = 360
 
 class Transformation(object):
+    """ Classes for transforming PVectors """
     @classmethod
     def transform(cls, transformation, vector):
         assert isinstance(transformation, np.ndarray)
@@ -121,7 +122,7 @@ class Drawable(Positionable):
         pyp.popMatrix()
 
 class Dynamic(object):
-    """ mixin for particles that have velocities"""
+    """ mixin for particles that have move"""
     def __init__(self, **kwargs):
         self.velocity = kwargs.get('velocity', PVector(0,0,0))
         self.mass = kwargs.get('mass', 1)
@@ -172,6 +173,7 @@ class Swarm(list, Drawable):
         ))
 
 class Spawner(Drawable):
+    """ An invisible object that moves around is used for spawning particles """
     def __init__(self, **kwargs):
         kwargs['active'] = True
         Drawable.__init__(self, **kwargs)
@@ -205,12 +207,13 @@ class Spawner(Drawable):
         return circle
 
 def setup():
-    global screen_size
-    global camera_pos
-    global spawner
-    global frame_count
-    global swarm
-    global img_dir
+    """ Required for pyprocessing.run() """
+    global screen_size      # size of the raster canvas
+    global camera_pos       # PVector of camera's position
+    global spawner          # an object used for spawning particles
+    global frame_count      # number of framse currently
+    global swarm            # Collection of background partciles
+    global img_dir          # dir where frames are stored
 
     run_stamp = time.strftime("%Y-%m-%d_%H-%M-%S")
     img_dir = './images/%s' % run_stamp
@@ -243,6 +246,7 @@ def setup():
 
 
 def draw():
+    """ Required for pyprocessing.run() """
     global screen_size
     global camera_pos
     global spawner
@@ -275,8 +279,6 @@ def draw():
 
     seed(animation_angle)
 
-    # spawner.draw()
-
     swarm.spawn(
         orientation=PVector(s/50,0,0),
         position=spawner.spawn_position,
@@ -301,7 +303,5 @@ def draw():
         # print type(img)
         pyp.save(os.path.join(img_dir, 'image_%s.jpg'%(frame_count)))
 
-    # for background_particle in background_particles:
-        # background_particle.draw()
 
 pyp.run()
