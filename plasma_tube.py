@@ -68,7 +68,8 @@ class Vector_Helpers(object):
         if vector_a.mag() == 0 or vector_b.mag() == 0:
             return None
         normal_a, normal_b = vector_a.get(), vector_b.get()
-        normal_a.normalize(), normal_b.normalize()
+        normal_a.normalize()
+        normal_b.normalize()
 
         return np.arccos(
             np.clip(
@@ -128,9 +129,13 @@ class Particle(Drawable, Dynamic):
         self.iteration = 0
 
     def draw_poly(self):
+        print "drawing poly"
         pyp.sphere(self.size)
 
+        pyp.line(self.position, PVector(0,0,0))
+
     def draw(self):
+        print "particle draw"
         if self.active:
             Drawable.draw(self)
 
@@ -151,8 +156,6 @@ class Swarm(list, Drawable):
         self.spawn_velocity = kwargs.pop('spawn_velocity', PVector(-1,0,0))
         Drawable.__init__(self, **kwargs)
         list.__init__(self, **kwargs)
-
-
 
     def spawn(self, **kwargs):
         # position = kwargs.pop('position')
@@ -199,7 +202,6 @@ class Spawner(Drawable):
 def setup():
     global screen_size
     global camera_pos
-    global background_particles
     global spawner
     global frame_count
     global swarm
@@ -230,7 +232,6 @@ def setup():
 def draw():
     global screen_size
     global camera_pos
-    global background_particles
     global spawner
     global frame_count
     global swarm
@@ -258,11 +259,12 @@ def draw():
         'position':spawner.spawn_position
     })
 
-    spawner.draw()
+    # spawner.draw()
 
     swarm.spawn(
-        orientation=PVector(100,0,0),
-        position=spawner.spawn_position
+        orientation=PVector(s/10,0,0),
+        position=spawner.spawn_position,
+        velocity=PVector(0,0,0)
     )
 
     for particle in swarm:
