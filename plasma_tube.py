@@ -103,7 +103,7 @@ class Drawable(Positionable):
     def __init__(self, **kwargs):
         Positionable.__init__(self, **kwargs)
         self.fill_color = kwargs.get('fill_color', default_fill_col)
-        self.active = kwargs.get('active', False)
+        self.active = kwargs.get('active', True)
 
     def draw_poly(self):
         pass
@@ -129,13 +129,11 @@ class Particle(Drawable, Dynamic):
         self.iteration = 0
 
     def draw_poly(self):
-        print "drawing poly"
         pyp.sphere(self.size)
 
         pyp.line(self.position, PVector(0,0,0))
 
     def draw(self):
-        print "particle draw"
         if self.active:
             Drawable.draw(self)
 
@@ -159,7 +157,10 @@ class Swarm(list, Drawable):
 
     def spawn(self, **kwargs):
         # position = kwargs.pop('position')
-        kwargs['velocity'] = self.spawn_velocity
+        vel = kwargs.get('velocity', PVector(0,0,0))
+        kwargs['velocity'] = PVector(
+            *[sum([s_i, v_i]) for s_i, v_i in zip( self.spawn_velocity, vel) ]
+        )
         if len(self) > self.capacity:
             self.pop(0)
         self.append(Particle(
@@ -207,17 +208,19 @@ def setup():
     global swarm
 
     frame_count = 0
+    s = max(screen_size)
 
-    camera_pos = PVector(0,0,max(screen_size))
+    camera_pos = PVector(0,0,s)
 
     spawner = Spawner(
-        position=PVector(0,0,max(screen_size)/10),
-        orientation=PVector(0,0,max(screen_size)/10),
-        velocity=PVector(1,0,0),
-        capacity=1
+        position=PVector(0,0,s),
+        orientation=PVector(0,0,s/10)
     )
 
-    swarm = Swarm()
+    swarm = Swarm(
+        spawn_velocity=PVector(0,0,-s/20),
+        capacity=100
+    )
 
     #init background_particles
     # background_particles = []
@@ -235,8 +238,7 @@ def draw():
     global spawner
     global frame_count
     global swarm
-
-    print "draw cycle"
+    global back_col
 
     pyp.camera(
         camera_pos.x, camera_pos.y, camera_pos.z,
@@ -253,26 +255,28 @@ def draw():
     pyp.background(back_col)
 
     #calculate spawner angle
-    spawner.angle = 2.0 * pi * (frame_count % frame_cycles) / frame_cycles
-    print 'spawner', pformat({
-        'angle':spawner.angle,
-        'position':spawner.spawn_position
-    })
+    animation_angle = 2.0 * pi * (frame_count % frame_cycles) / frame_cycles
+    spawner.angle = 65 * animation_angle
+    # print 'spawner', pformat({
+    #     'angle':spawner.angle,
+    #     'position':spawner.spawn_position
+    # })
 
     # spawner.draw()
 
     swarm.spawn(
-        orientation=PVector(s/10,0,0),
+        orientation=PVector(s/50,0,0),
         position=spawner.spawn_position,
-        velocity=PVector(0,0,0)
+        velocity=PVector((sin(animation_angle)) * s/50, (cos(animation_angle)) * s/50, (1-random()*2) * s/100),
+        active=True
     )
 
     for particle in swarm:
-        print 'particle', pformat({
-            'position': particle.position,
-            'velocity': particle.velocity,
-            'orientation': particle.orientation
-        })
+        # print 'particle', pformat({
+        #     'position': particle.position,
+        #     'velocity': particle.velocity,
+        #     'orientation': particle.orientation
+        # })
         particle.draw()
         particle.step()
 
