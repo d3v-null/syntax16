@@ -3,14 +3,18 @@ import pyprocessing as pyp
 
 from pyprocessing import PVector, color
 from math import sqrt, pow, sin, cos, acos, tan, atan, pi, e, log, exp
-from random import random, uniform
+from random import random, uniform, seed
 import numpy as np
+import time
 from pprint import pprint, pformat
+import os
+import errno
+import distutils
 
 screen_size = (320, 200)
-back_col = color(0, 0, 0)
+back_col = color(0, 0, 0, 250)
 default_fill_col = color(255,255,255)
-background_particle_count = 100
+background_particle_count = 500
 frame_cycles = 360
 
 class Transformation(object):
@@ -206,6 +210,12 @@ def setup():
     global spawner
     global frame_count
     global swarm
+    global img_dir
+
+    run_stamp = time.strftime("%Y-%m-%d_%H-%M-%S")
+    img_dir = './images/%s' % run_stamp
+    if not os.path.exists(img_dir):
+        os.makedirs(img_dir)
 
     frame_count = 0
     s = max(screen_size)
@@ -218,8 +228,8 @@ def setup():
     )
 
     swarm = Swarm(
-        spawn_velocity=PVector(0,0,-s/20),
-        capacity=100
+        spawn_velocity=PVector(0,0,-s/40),
+        capacity=background_particle_count
     )
 
     #init background_particles
@@ -239,6 +249,7 @@ def draw():
     global frame_count
     global swarm
     global back_col
+    global img_dir
 
     pyp.camera(
         camera_pos.x, camera_pos.y, camera_pos.z,
@@ -262,12 +273,14 @@ def draw():
     #     'position':spawner.spawn_position
     # })
 
+    seed(animation_angle)
+
     # spawner.draw()
 
     swarm.spawn(
         orientation=PVector(s/50,0,0),
         position=spawner.spawn_position,
-        velocity=PVector((sin(animation_angle)) * s/50, (cos(animation_angle)) * s/50, (1-random()*2) * s/100),
+        velocity=PVector((sin(animation_angle)) * s/100, (cos(animation_angle)) * s/100, (1-random()*2) * s/100),
         active=True
     )
 
@@ -282,6 +295,11 @@ def draw():
 
 
     frame_count += 1
+
+    if frame_count in range(360,720):
+        img = pyp.get()
+        # print type(img)
+        pyp.save(os.path.join(img_dir, 'image_%s.jpg'%(frame_count)))
 
     # for background_particle in background_particles:
         # background_particle.draw()
