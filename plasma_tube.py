@@ -221,29 +221,17 @@ def setup():
         os.makedirs(img_dir)
 
     frame_count = 0
+
     s = max(screen_size)
-
     camera_pos = PVector(0,0,s)
-
     spawner = Spawner(
         position=PVector(0,0,s),
         orientation=PVector(0,0,s/10)
     )
-
     swarm = Swarm(
         spawn_velocity=PVector(0,0,-s/40),
         capacity=background_particle_count
     )
-
-    #init background_particles
-    # background_particles = []
-    # for i in range(1, background_particle_count):
-    #     background_particles.append(
-    #         Particle(
-    #             active=False
-    #         )
-    #     )
-
 
 def draw():
     """ Required for pyprocessing.run() """
